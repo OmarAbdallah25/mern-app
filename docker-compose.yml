@@ -1,0 +1,58 @@
+services:
+  # ---------------- Base de données ----------------
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    restart: unless-stopped
+    volumes:
+      - mern-data:/data/db            # persistance des données
+    networks:
+      - mern-network
+    healthcheck:                      # contrôle de santé
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ---------------- API Express ----------------
+  server:
+    build: ./server
+    image: mern-server
+    container_name: server
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/mern   # "mongodb" = nom du service sur le réseau
+      PORT: 9000
+    depends_on:
+      mongodb:
+        condition: service_healthy    # attend que MongoDB soit "healthy"
+    networks:
+      - mern-network
+
+  # ---------------- Client React ----------------
+  client:
+    build:
+      context: ./client
+      args:
+        REACT_APP_API_URL: http://localhost:9000   # URL vue par le NAVIGATEUR
+    image: mern-client
+    container_name: client
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    networks:
+      - mern-network
+
+networks:
+  mern-network:
+    name: mern-network
+    driver: bridge
+
+volumes:
+  mern-data:
+    name: mern-data

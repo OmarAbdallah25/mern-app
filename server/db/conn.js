@@ -2,7 +2,7 @@ const { MongoClient } = require("mongodb");
 
 // Use the hostname of the MongoDB service in your Docker network.
 // Replace 'mongo' with the service name of your MongoDB container if it's different.
-const Db = process.env.MONGO_URI;
+const Db = process.env.MONGO_URI || "mongodb://localhost:27017/employees";
 const client = new MongoClient(Db);
 
 let _db;
